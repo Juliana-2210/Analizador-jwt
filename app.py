@@ -192,6 +192,9 @@ def index():
             try:
                 payload_obj = json.loads(payload_new)
                 
+                # Guardar el payload original (sin iat/exp) para verificar duplicados
+                payload_key = json.dumps(payload_obj, sort_keys=True)
+                
                 # Agregar timestamps al payload
                 now = int(time.time())
                 payload_obj["iat"] = now  # issued at
@@ -201,6 +204,19 @@ def index():
                 # Crear header con el algoritmo seleccionado
                 header = {"alg": algorithm, "typ": "JWT"}
                 new_token = encode_jwt(header, payload_obj, secret_new_text.encode("utf-8"))
+                
+                # Verificar si ya existe un token con el mismo payload/algoritmo/secreto en los últimos 60 segundos
+                if mongo.is_connected():
+                    # Buscar el token exacto en la BD
+                    existing = TokenRepository.get_token_by_token_string(new_token)
+                    if existing:
+                        output["create_result"] = {
+                            "ok": False, 
+                            "error": "Este token ya existe en la base de datos. No se permite crear duplicados."
+                        }
+                        return render_template("index_improved.html",
+                                               output=output, token=token, secret=secret_text,
+                                               new_token=new_token, db_status=db_status)
                 
                 # Guardar en MongoDB si está conectado
                 if mongo.is_connected():
@@ -243,6 +259,15 @@ def index():
 
         # Análisis completo en paneles
         if action == "analyze":
+            # VERIFICAR SI EL TOKEN EXISTE EN BD Y TRAER SUS DATOS
+            token_from_db = None
+            if mongo.is_connected() and token:
+                token_from_db = TokenRepository.get_token_by_token_string(token)
+                if token_from_db:
+                    # Usar datos del BD pero recalcular expiración
+                    output["from_database"] = True
+                    output["token_id"] = str(token_from_db.get("_id", ""))
+            
             # LEXICAL
             lex = lexical_analysis(token)
             output["lexical"] = lex
@@ -268,6 +293,66 @@ def index():
                     }
                 except Exception as e:
                     output["decoded"] = {"ok": False, "error": str(e)}
+            # EXPIRACIÓN: Verificar si el token ha expirado
+            expiration_info = {
+                "has_exp": False,
+                "exp": None,
+                "current_time": int(time.time()),
+                "is_expired": False,
+                "time_left": 0,
+                "time_left_formatted": "",
+                "time_expired_formatted": ""
+            }
+            
+            if output.get("decoded", {}).get("ok") and output["decoded"]["payload"]:
+                payload = output["decoded"]["payload"]
+                if isinstance(payload, dict) and "exp" in payload:
+                    exp_time = payload["exp"]
+                    current_time = int(time.time())
+                    expiration_info["has_exp"] = True
+                    expiration_info["exp"] = exp_time
+                    expiration_info["current_time"] = current_time
+                    
+                    if exp_time > current_time:
+                        expiration_info["is_expired"] = False
+                        time_left = exp_time - current_time
+                        expiration_info["time_left"] = time_left
+                        
+                        # Formatear tiempo restante
+                        days = time_left // 86400
+                        hours = (time_left % 86400) // 3600
+                        minutes = (time_left % 3600) // 60
+                        seconds = time_left % 60
+                        
+                        if days > 0:
+                            expiration_info["time_left_formatted"] = f"{days}d {hours}h {minutes}m {seconds}s"
+                        elif hours > 0:
+                            expiration_info["time_left_formatted"] = f"{hours}h {minutes}m {seconds}s"
+                        elif minutes > 0:
+                            expiration_info["time_left_formatted"] = f"{minutes}m {seconds}s"
+                        else:
+                            expiration_info["time_left_formatted"] = f"{seconds}s"
+                    else:
+                        expiration_info["is_expired"] = True
+                        time_expired = current_time - exp_time
+                        
+                        # Formatear tiempo expirado
+                        days = time_expired // 86400
+                        hours = (time_expired % 86400) // 3600
+                        minutes = (time_expired % 3600) // 60
+                        seconds = time_expired % 60
+                        
+                        if days > 0:
+                            expiration_info["time_expired_formatted"] = f"{days}d {hours}h {minutes}m {seconds}s"
+                        elif hours > 0:
+                            expiration_info["time_expired_formatted"] = f"{hours}h {minutes}m {seconds}s"
+                        elif minutes > 0:
+                            expiration_info["time_expired_formatted"] = f"{minutes}m {seconds}s"
+                        else:
+                            expiration_info["time_expired_formatted"] = f"{seconds}s"
+            
+            output["expiration"] = expiration_info
+
             # SEMANTIC (only if header/payload decode OK)
             if output.get("decoded", {}).get("ok") and output["decoded"]["header"] and output["decoded"]["payload"]:
                 sem_msgs = semantic_analysis(output["decoded"]["header"], output["decoded"]["payload"])

@@ -22,7 +22,7 @@
   <!-- Resumen rápido de estado -->
   {% if output %}
     <div class="row mb-4">
-      <div class="col-md-3">
+      <div class="col-md-2">
         <div class="summary-card">
           <h5><i class="fas fa-check-circle"></i> Análisis Léxico</h5>
           {% if output.lexical %}
@@ -36,7 +36,7 @@
           {% endif %}
         </div>
       </div>
-      <div class="col-md-3">
+      <div class="col-md-2">
         <div class="summary-card">
           <h5><i class="fas fa-code"></i> Análisis Sintáctico</h5>
           {% if output.syntactic %}
@@ -50,7 +50,7 @@
           {% endif %}
         </div>
       </div>
-      <div class="col-md-3">
+      <div class="col-md-2">
         <div class="summary-card">
           <h5><i class="fas fa-brain"></i> Análisis Semántico</h5>
           {% if output.semantic %}
@@ -64,7 +64,7 @@
           {% endif %}
         </div>
       </div>
-      <div class="col-md-3">
+      <div class="col-md-2">
         <div class="summary-card">
           <h5><i class="fas fa-shield-alt"></i> Firma</h5>
           {% if output.signature %}
@@ -76,6 +76,33 @@
               {% endif %}
             {% else %}
               <span class="badge badge-warning">⚠ No verificada</span>
+            {% endif %}
+          {% else %}
+            <span class="badge" style="background: #cbd5e1; color: #334155;">Pendiente</span>
+          {% endif %}
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="summary-card">
+          <h5><i class="fas fa-hourglass-end"></i> Estado de Expiración</h5>
+          {% if output.expiration %}
+            {% if output.expiration.has_exp %}
+              {% set now = output.expiration.current_time %}
+              {% set exp = output.expiration.exp %}
+              {% if exp > now %}
+                <span class="badge badge-valid">✓ Activo</span>
+                <small class="d-block mt-1">
+                  Expira en: <strong>{{ output.expiration.time_left_formatted }}</strong>
+                </small>
+              {% else %}
+                <span class="badge badge-invalid">✗ Expirado</span>
+                <small class="d-block mt-1">
+                  Expiró hace: <strong>{{ output.expiration.time_expired_formatted }}</strong>
+                </small>
+              {% endif %}
+            {% else %}
+              <span class="badge" style="background: #f57c00; color: white;">⚠ Sin exp</span>
+              <small class="d-block mt-1">Token sin fecha de expiración</small>
             {% endif %}
           {% else %}
             <span class="badge" style="background: #cbd5e1; color: #334155;">Pendiente</span>
@@ -503,14 +530,12 @@ DOT → "."
               <div class="col-md-6">
                 <label class="form-label"><i class="fas fa-hourglass-end"></i> Expiración del Token</label>
                 <select name="expiration_time" class="form-select" id="expiration_select" onchange="updateExpirationDisplay()">
-                  <option value="30">30 segundos</option>
                   <option value="60">1 minuto</option>
-                  <option value="120">2 minutos</option>
                   <option value="180">3 minutos</option>
                   <option value="300">5 minutos</option>
-                  <option value="600" selected>10 minutos (máximo)</option>
+                  <option value="600" selected>10 minutos</option>
                 </select>
-                <small class="text-muted">El token expirará después de este tiempo (máximo 10 minutos).</small>
+                <small class="text-muted">El token expirará después de este tiempo.</small>
               </div>
             </div>
 

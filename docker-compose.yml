@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  jwt-analyzer:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=production
+      - MONGODB_URI=${MONGODB_URI}
+    volumes:
+      - ./templates:/app/templates
+      - ./static:/app/static
+      - ./jwt_analyzer:/app/jwt_analyzer
+    restart: unless-stopped

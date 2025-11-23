@@ -144,6 +144,18 @@ class TokenRepository:
             return None
     
     @staticmethod
+    def get_token_by_token_string(token_string):
+        """Obtener un token específico por su valor de token"""
+        collection = TokenRepository.get_collection()
+        if collection is None:
+            return None
+        
+        try:
+            return collection.find_one({"token": token_string})
+        except:
+            return None
+    
+    @staticmethod
     def get_tokens_by_type(token_type):
         """Obtener tokens por tipo (valid, invalid, expired, etc)"""
         collection = TokenRepository.get_collection()
