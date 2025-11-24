@@ -618,6 +618,17 @@ DOT → "."
                 }
                 updateTimer();
                 const timerInterval = setInterval(updateTimer, 1000);
+                
+                // Mostrar botón para ver en Tokens Generados
+                {% if output.create_result.token_id %}
+                setTimeout(() => {
+                  if (confirm('✅ Token guardado en la base de datos.\n\n¿Quieres ver todos tus tokens generados?')) {
+                    const savedTokensTab = new bootstrap.Tab(document.getElementById('saved-tokens-tab'));
+                    savedTokensTab.show();
+                    loadSavedTokens();
+                  }
+                }, 1000);
+                {% endif %}
               </script>
             {% endif %}
             
