@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, jsonify
 import json
 import binascii
 import time
+import secrets
 from datetime import datetime, timedelta
 
 from jwt_analyzer.lexer import LexerJWT, LexerError, Token
@@ -14,6 +15,10 @@ from jwt_analyzer.mongodb import TokenRepository, CollectionRepository, mongo
 
 app = Flask(__name__)
 app.config['JSON_SORT_KEYS'] = False
+
+# Generar SECRET_KEY seguro de 32 bytes (256 bits)
+# Se genera una vez al iniciar la aplicación
+APP_SECRET_KEY = secrets.token_bytes(32)
 
 # ======================== CASOS DE PRUEBA ========================
 
@@ -172,20 +177,18 @@ def semantic_analysis(header_obj, payload_obj):
 def index():
     output = {}
     token = ""
-    secret = ""
     new_token = ""
     db_status = "Conectado" if mongo.is_connected() else "Desconectado"
     
     if request.method == "POST":
         action = request.form.get("action")
         token = request.form.get("jwt", "").strip()
-        secret_text = request.form.get("secret", "")
-        secret = secret_text.encode("utf-8") if secret_text else b""
+        # Usar APP_SECRET_KEY en lugar de secret manual
+        secret = APP_SECRET_KEY
 
         # Crear token
         if action == "create":
             payload_new = request.form.get("payload_new", "")
-            secret_new_text = request.form.get("secret_new", "")
             algorithm = request.form.get("algorithm", "HS256")  # HS256 o HS384
             expiration_time = request.form.get("expiration_time", "3600")  # segundos
             
@@ -203,7 +206,8 @@ def index():
                 
                 # Crear header con el algoritmo seleccionado
                 header = {"alg": algorithm, "typ": "JWT"}
-                new_token = encode_jwt(header, payload_obj, secret_new_text.encode("utf-8"))
+                # Usar APP_SECRET_KEY generado automáticamente (32 bytes seguros)
+                new_token = encode_jwt(header, payload_obj, APP_SECRET_KEY)
                 
                 # Verificar si ya existe un token con el mismo payload/algoritmo/secreto en los últimos 60 segundos
                 if mongo.is_connected():
@@ -215,7 +219,7 @@ def index():
                             "error": "Este token ya existe en la base de datos. No se permite crear duplicados."
                         }
                         return render_template("index_improved.html",
-                                               output=output, token=token, secret=secret_text,
+                                               output=output, token=token,
                                                new_token=new_token, db_status=db_status)
                 
                 # Guardar en MongoDB si está conectado
@@ -257,7 +261,7 @@ def index():
             except Exception as e:
                 output["create_result"] = {"ok": False, "error": str(e)}
             return render_template("index_improved.html",
-                                   output=output, token=token, secret=secret_text,
+                                   output=output, token=token,
                                    new_token=new_token, db_status=db_status)
 
         # Análisis completo en paneles
@@ -430,7 +434,7 @@ def index():
                 print(f"[DEBUG] No se guardará: mongo.is_connected()={mongo.is_connected()}, decoded.ok={output.get('decoded', {}).get('ok')}")
 
     return render_template("index_improved.html",
-                           output=output, token=token, secret=secret.decode() if isinstance(secret, bytes) else secret,
+                           output=output, token=token,
                            new_token=new_token, db_status=db_status)
 
 # ======================== API Routes para MongoDB ========================

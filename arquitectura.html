@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arquitectura JWT Analyzer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 40px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #2d3748;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #718096;
+            font-size: 1.2em;
+            margin-bottom: 40px;
+        }
+        
+        .architecture {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+        
+        .layer {
+            background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+            border-radius: 15px;
+            padding: 25px;
+            border: 2px solid #e2e8f0;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+        }
+        
+        .layer:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 12px rgba(0,0,0,0.15);
+        }
+        
+        .layer-title {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #2d3748;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .icon {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            font-size: 1.5em;
+        }
+        
+        .icon-user { background: #4299e1; }
+        .icon-aws { background: #ff9900; }
+        .icon-flask { background: #000000; }
+        .icon-db { background: #13aa52; }
+        
+        .components {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .component {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .component-title {
+            font-weight: bold;
+            color: #2d3748;
+            margin-bottom: 8px;
+        }
+        
+        .component-list {
+            list-style: none;
+            color: #4a5568;
+            font-size: 0.9em;
+        }
+        
+        .component-list li {
+            padding: 4px 0;
+            padding-left: 20px;
+            position: relative;
+        }
+        
+        .component-list li:before {
+            content: "▸";
+            position: absolute;
+            left: 0;
+            color: #667eea;
+            font-weight: bold;
+        }
+        
+        .flow {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin-top: 30px;
+        }
+        
+        .flow-title {
+            font-size: 1.8em;
+            font-weight: bold;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .flow-steps {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+        
+        .flow-step {
+            background: rgba(255,255,255,0.1);
+            padding: 20px;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255,255,255,0.2);
+        }
+        
+        .flow-step-number {
+            font-size: 2em;
+            font-weight: bold;
+            margin-bottom: 10px;
+            opacity: 0.8;
+        }
+        
+        .flow-step-title {
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .flow-step-desc {
+            font-size: 0.9em;
+            line-height: 1.6;
+            opacity: 0.9;
+        }
+        
+        .tech-stack {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+        
+        .tech-category {
+            background: #f7fafc;
+            padding: 20px;
+            border-radius: 10px;
+            border-top: 4px solid #667eea;
+        }
+        
+        .tech-category-title {
+            font-weight: bold;
+            color: #2d3748;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+        
+        .tech-list {
+            list-style: none;
+            color: #4a5568;
+            font-size: 0.9em;
+        }
+        
+        .tech-list li {
+            padding: 5px 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .tech-list li:last-child {
+            border-bottom: none;
+        }
+        
+        .url-box {
+            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            margin-top: 30px;
+            font-size: 1.2em;
+            font-weight: bold;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .arrow {
+            text-align: center;
+            font-size: 2em;
+            color: #667eea;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏗️ Arquitectura del Sistema</h1>
+        <div class="subtitle">JWT Analyzer - Análisis de Tokens con Lenguajes Formales</div>
+        
+        <div class="architecture">
+            <!-- Capa 1: Usuario -->
+            <div class="layer">
+                <div class="layer-title">
+                    <div class="icon icon-user">👤</div>
+                    1. Capa de Presentación - Usuario
+                </div>
+                <div class="components">
+                    <div class="component">
+                        <div class="component-title">Interfaz Web</div>
+                        <ul class="component-list">
+                            <li>HTML5 + CSS3</li>
+                            <li>Bootstrap 5.3.0</li>
+                            <li>JavaScript Vanilla</li>
+                            <li>Font Awesome 6.4.0</li>
+                            <li>Diseño Responsive</li>
+                        </ul>
+                    </div>
+                    <div class="component">
+                        <div class="component-title">Funcionalidades</div>
+                        <ul class="component-list">
+                            <li>Crear Tokens JWT</li>
+                            <li>Analizar Tokens</li>
+                            <li>Ver Tokens Generados</li>
+                            <li>Casos de Prueba</li>
+                            <li>Temporizador Expiración</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="arrow">⬇️</div>
+            
+            <!-- Capa 2: AWS -->
+            <div class="layer">
+                <div class="layer-title">
+                    <div class="icon icon-aws">☁️</div>
+                    2. Capa de Infraestructura - AWS Elastic Beanstalk
+                </div>
+                <div class="components">
+                    <div class="component">
+                        <div class="component-title">Load Balancer</div>
+                        <ul class="component-list">
+                            <li>AWS Elastic Load Balancer</li>
+                            <li>Distribución de tráfico</li>
+                            <li>Health checks</li>
+                            <li>Alta disponibilidad</li>
+                        </ul>
+                    </div>
+                    <div class="component">
+                        <div class="component-title">Compute</div>
+                        <ul class="component-list">
+                            <li>EC2 Instance (t3.micro)</li>
+                            <li>Amazon Linux 2023</li>
+                            <li>Auto-scaling configurado</li>
+                            <li>Región: us-east-1</li>
+                        </ul>
+                    </div>
+                    <div class="component">
+                        <div class="component-title">Monitoreo</div>
+                        <ul class="component-list">
+                            <li>AWS CloudWatch</li>
+                            <li>Application logs</li>
+                            <li>Error tracking</li>
+                            <li>Performance metrics</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="arrow">⬇️</div>
+            
+            <!-- Capa 3: Aplicación -->
+            <div class="layer">
+                <div class="layer-title">
+                    <div class="icon icon-flask">🐍</div>
+                    3. Capa de Aplicación - Python Flask
+                </div>
+                <div class="components">
+                    <div class="component">
+                        <div class="component-title">Web Server</div>
+                        <ul class="component-list">
+                            <li>Gunicorn 23.0.0</li>
+                            <li>4 workers</li>
+                            <li>Timeout: 60s</li>
+                            <li>Puerto: 5000</li>
+                        </ul>
+                    </div>
+                    <div class="component">
+                        <div class="component-title">Framework</div>
+                        <ul class="component-list">
+                            <li>Flask 3.0.2</li>
+                            <li>Python 3.11</li>
+                            <li>API REST endpoints</li>
+                            <li>Template rendering</li>
+                        </ul>
+                    </div>
+                    <div class="component">
+                        <div class="component-title">Módulos Principales</div>
+                        <ul class="component-list">
+                            <li>lexer.py (Análisis Léxico)</li>
+                            <li>parser.py (Sintáctico)</li>
+                            <li>semantic.py (Semántico)</li>
+                            <li>encoder.py (Creación JWT)</li>
+                            <li>crypto_verify.py (Firmas)</li>
+                            <li>mongodb.py (Repositorio)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="arrow">⬇️</div>
+            
+            <!-- Capa 4: Base de Datos -->
+            <div class="layer">
+                <div class="layer-title">
+                    <div class="icon icon-db">🗄️</div>
+                    4. Capa de Datos - MongoDB Atlas
+                </div>
+                <div class="components">
+                    <div class="component">
+                        <div class="component-title">Cluster</div>
+                        <ul class="component-list">
+                            <li>jwt-analyzer-cluster</li>
+                            <li>Free Tier (512MB)</li>
+                            <li>Región: us-east-1</li>
+                            <li>SSL/TLS habilitado</li>
+                        </ul>
+                    </div>
+                    <div class="component">
+                        <div class="component-title">Base de Datos</div>
+                        <ul class="component-list">
+                            <li>Database: jwt_analyzer</li>
+                            <li>Collection: tokens</li>
+                            <li>Collection: collections</li>
+                            <li>PyMongo 4.10.1</li>
+                        </ul>
+                    </div>
+                    <div class="component">
+                        <div class="component-title">Estructura Tokens</div>
+                        <ul class="component-list">
+                            <li>token (string)</li>
+                            <li>header (object)</li>
+                            <li>payload (object)</li>
+                            <li>algorithm (string)</li>
+                            <li>created_at (timestamp)</li>
+                            <li>expires_at (timestamp)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Flujo de Datos -->
+        <div class="flow">
+            <div class="flow-title">📊 Flujo de Datos Principal</div>
+            <div class="flow-steps">
+                <div class="flow-step">
+                    <div class="flow-step-number">1️⃣</div>
+                    <div class="flow-step-title">Crear Token</div>
+                    <div class="flow-step-desc">
+                        Usuario → Flask → encoder.py → Genera JWT (Header.Payload.Signature) → mongodb.py → Guarda en MongoDB → Respuesta
+                    </div>
+                </div>
+                <div class="flow-step">
+                    <div class="flow-step-number">2️⃣</div>
+                    <div class="flow-step-title">Analizar Token</div>
+                    <div class="flow-step-desc">
+                        Usuario → Flask → lexer.py (Tokenización) → parser.py (Sintaxis) → semantic.py (Validación) → crypto_verify.py (Firma) → mongodb.py → Respuesta detallada
+                    </div>
+                </div>
+                <div class="flow-step">
+                    <div class="flow-step-number">3️⃣</div>
+                    <div class="flow-step-title">Ver Tokens</div>
+                    <div class="flow-step-desc">
+                        Usuario → Flask → /api/tokens → TokenRepository.get_all_tokens() → MongoDB Atlas → Lista ordenada → Interfaz
+                    </div>
+                </div>
+                <div class="flow-step">
+                    <div class="flow-step-number">4️⃣</div>
+                    <div class="flow-step-title">Eliminar Token</div>
+                    <div class="flow-step-desc">
+                        Usuario → Flask → /api/tokens/&lt;id&gt; DELETE → TokenRepository.delete_token() → MongoDB → Confirmación → Recarga
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Stack Tecnológico -->
+        <div style="margin-top: 40px;">
+            <h2 style="text-align: center; color: #2d3748; margin-bottom: 20px;">💻 Stack Tecnológico Completo</h2>
+            <div class="tech-stack">
+                <div class="tech-category">
+                    <div class="tech-category-title">Backend</div>
+                    <ul class="tech-list">
+                        <li>Python 3.11</li>
+                        <li>Flask 3.0.2</li>
+                        <li>Gunicorn 23.0.0</li>
+                        <li>PyMongo 4.10.1</li>
+                        <li>python-dotenv</li>
+                    </ul>
+                </div>
+                <div class="tech-category">
+                    <div class="tech-category-title">Frontend</div>
+                    <ul class="tech-list">
+                        <li>HTML5 / CSS3</li>
+                        <li>Bootstrap 5.3.0</li>
+                        <li>Font Awesome 6.4.0</li>
+                        <li>JavaScript ES6+</li>
+                    </ul>
+                </div>
+                <div class="tech-category">
+                    <div class="tech-category-title">Cloud/Infraestructura</div>
+                    <ul class="tech-list">
+                        <li>AWS Elastic Beanstalk</li>
+                        <li>AWS EC2 (t3.micro)</li>
+                        <li>AWS ELB</li>
+                        <li>AWS CloudWatch</li>
+                        <li>MongoDB Atlas</li>
+                    </ul>
+                </div>
+                <div class="tech-category">
+                    <div class="tech-category-title">Seguridad</div>
+                    <ul class="tech-list">
+                        <li>HMAC-SHA256</li>
+                        <li>HMAC-SHA384</li>
+                        <li>SSL/TLS</li>
+                        <li>Validación firmas</li>
+                    </ul>
+                </div>
+                <div class="tech-category">
+                    <div class="tech-category-title">DevOps</div>
+                    <ul class="tech-list">
+                        <li>Git / GitHub</li>
+                        <li>EB CLI</li>
+                        <li>Procfile</li>
+                        <li>.ebextensions</li>
+                    </ul>
+                </div>
+                <div class="tech-category">
+                    <div class="tech-category-title">Análisis</div>
+                    <ul class="tech-list">
+                        <li>Análisis Léxico</li>
+                        <li>Análisis Sintáctico</li>
+                        <li>Análisis Semántico</li>
+                        <li>Validación JWT</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div class="url-box">
+            🌐 URL de Producción:<br>
+            http://jwt-analyzer-prod.eba-sqdmfwrs.us-east-1.elasticbeanstalk.com
+        </div>
+        
+        <div style="text-align: center; margin-top: 30px; color: #718096; font-size: 0.9em;">
+            <strong>Proyecto Final - Lenguajes Formales</strong><br>
+            Juliana Rincón Bautista | Luisa Fernanda Merchán Rojas
+        </div>
+    </div>
+</body>
+</html>

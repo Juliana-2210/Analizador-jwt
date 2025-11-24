@@ -151,18 +151,11 @@
               <small class="text-muted">Pega un token JWT válido en formato: HEADER.PAYLOAD.SIGNATURE</small>
             </div>
 
-            <div class="row mb-3">
-              <div class="col-md-6">
-                <label class="form-label">Secret (Opcional)</label>
-                <input name="secret" type="password" class="form-control" placeholder="Tu clave secreta para verificar firma" value="{{ secret }}">
-                <small class="text-muted">Necesario para verificar la firma del token</small>
-              </div>
-              <div class="col-md-6">
-                <label class="form-label">&nbsp;</label>
-                <button name="action" value="analyze" class="btn btn-primary w-100">
-                  <i class="fas fa-play"></i> Analizar Token Completo
-                </button>
-              </div>
+            <div class="mb-3">
+              <button name="action" value="analyze" class="btn btn-primary w-100">
+                <i class="fas fa-play"></i> Analizar Token Completo
+              </button>
+              <small class="text-muted d-block mt-2">La verificación de firma se realiza automáticamente con claves internas seguras</small>
             </div>
           </div>
         </div>
@@ -550,10 +543,8 @@ DOT → "."
               <small class="text-muted">Ingresa el payload como JSON válido (sin iat ni exp, se agregan automáticamente).</small>
             </div>
 
-            <div class="mb-3">
-              <label class="form-label">Secret para Firmar</label>
-              <input name="secret_new" type="password" class="form-control" placeholder="Tu clave secreta">
-              <small class="text-muted">Se usará para firmar el token con el algoritmo seleccionado.</small>
+            <div class="alert alert-info">
+              <i class="fas fa-shield-alt"></i> <strong>Seguridad:</strong> El token será firmado automáticamente con una clave criptográfica de 32 bytes generada de forma segura.
             </div>
 
             <button name="action" value="create" class="btn btn-success w-100">
@@ -816,24 +807,9 @@ DOT → "."
                   </div>
                 </div>
                 
-                <!-- SECRET -->
-                <div class="card mb-3" style="border-left: 4px solid #28a745;">
-                  <div class="card-header" style="background: #e8f5e9; padding: 8px 12px;">
-                    <strong style="color: #28a745;">🔑 Secret/Clave para Verificar</strong>
-                  </div>
-                  <div class="card-body" style="padding: 10px; background: #f8f9fa; font-family: monospace; font-size: 0.9em; word-break: break-all;">
-                    <code>${test.secret || '(sin secret requerido)'}</code>
-                  </div>
-                  <div class="card-footer" style="padding: 6px; background: white;">
-                    <button class="btn btn-sm btn-outline-success" onclick="copyToClipboard('${test.secret.replace(/'/g, "\\'")}')">
-                      <i class="fas fa-copy"></i> Copiar Secret
-                    </button>
-                  </div>
-                </div>
-                
                 <!-- BOTONES DE ACCIÓN -->
                 <div class="d-flex gap-2">
-                  <button class="btn btn-sm btn-success" onclick="loadTestCase('${test.token.replace(/'/g, "\\'")}', '${test.secret.replace(/'/g, "\\'")}')">
+                  <button class="btn btn-sm btn-success" onclick="loadTestCase('${test.token.replace(/'/g, "\\'")}')">
                     <i class="fas fa-play-circle"></i> Probar en Analizador
                   </button>
                 </div>
@@ -968,14 +944,13 @@ DOT → "."
   }
 
   // Cargar un caso de prueba en el analizador
-  function loadTestCase(token, secret) {
+  function loadTestCase(token) {
     // Cambiar a la pestaña de análisis
     const analyzeTab = new bootstrap.Tab(document.getElementById('analyze-tab'));
     analyzeTab.show();
     
     // Llenar el formulario
     document.querySelector('textarea[name="jwt"]').value = token;
-    document.querySelector('input[name="secret"]').value = secret;
     
     // Scroll hacia el top
     window.scrollTo(0, 0);
