@@ -125,6 +125,11 @@
       </button>
     </li>
     <li class="nav-item" role="presentation">
+      <button class="nav-link" id="saved-tokens-tab" data-bs-toggle="tab" data-bs-target="#saved-tokens-content" type="button" role="tab">
+        <i class="fas fa-database"></i> Tokens Generados
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
       <button class="nav-link" id="tests-tab" data-bs-toggle="tab" data-bs-target="#tests-content" type="button" role="tab">
         <i class="fas fa-flask"></i> Casos de Prueba
       </button>
@@ -647,7 +652,32 @@ DOT → "."
       {% endif %}
     </div>
 
-    <!-- TAB 3: CASOS DE PRUEBA -->
+    <!-- TAB 3: TOKENS GENERADOS -->
+    <div class="tab-pane fade" id="saved-tokens-content" role="tabpanel">
+      <div class="card mb-4">
+        <div class="card-header bg-success text-white">
+          <h5 class="mb-0">
+            <i class="fas fa-database"></i> Tokens Generados
+            <button class="btn btn-sm btn-light float-end" onclick="loadSavedTokens()">
+              <i class="fas fa-sync-alt"></i> Recargar
+            </button>
+          </h5>
+        </div>
+        <div class="card-body">
+          <p>Aquí se muestran todos los tokens que has creado o analizado, guardados en MongoDB.</p>
+          <div id="savedTokensContainer">
+            <div class="text-center my-4">
+              <div class="spinner-border" role="status">
+                <span class="visually-hidden">Cargando...</span>
+              </div>
+              <p class="mt-2 text-muted">Cargando tokens...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 4: CASOS DE PRUEBA -->
     <div class="tab-pane fade" id="tests-content" role="tabpanel">
       <div class="card mb-4">
         <div class="card-header bg-info text-white">
@@ -694,6 +724,14 @@ DOT → "."
     
     // Cargar casos de prueba
     loadTestCases();
+    
+    // Cargar tokens guardados cuando se haga clic en la tab
+    const savedTokensTab = document.getElementById('saved-tokens-tab');
+    if (savedTokensTab) {
+      savedTokensTab.addEventListener('shown.bs.tab', function() {
+        loadSavedTokens();
+      });
+    }
   });
 
   // Cargar casos de prueba desde el servidor
@@ -809,6 +847,128 @@ DOT → "."
     } catch (error) {
       console.error('Error cargando casos de prueba:', error);
       document.getElementById('testCasesContainer').innerHTML = '<div class="alert alert-danger">Error al cargar los casos de prueba</div>';
+    }
+  }
+
+  // Cargar tokens guardados desde MongoDB
+  async function loadSavedTokens() {
+    const container = document.getElementById('savedTokensContainer');
+    container.innerHTML = '<div class="text-center my-4"><div class="spinner-border" role="status"></div><p class="mt-2 text-muted">Cargando tokens...</p></div>';
+    
+    try {
+      const response = await fetch('/api/tokens');
+      if (!response.ok) {
+        throw new Error('Error al cargar tokens');
+      }
+      
+      const tokens = await response.json();
+      
+      if (tokens.length === 0) {
+        container.innerHTML = '<div class="alert alert-info"><i class="fas fa-info-circle"></i> No hay tokens guardados aún. Crea o analiza un token para verlo aquí.</div>';
+        return;
+      }
+      
+      container.innerHTML = '';
+      
+      tokens.forEach((token, index) => {
+        const createdAt = token.created_at ? new Date(token.created_at * 1000).toLocaleString('es-ES') : 'N/A';
+        const expiresAt = token.expires_at ? new Date(token.expires_at * 1000).toLocaleString('es-ES') : 'N/A';
+        const now = Math.floor(Date.now() / 1000);
+        const isExpired = token.expires_at && token.expires_at < now;
+        const typeLabel = token.type === 'created' ? 'Creado' : 'Analizado';
+        const validBadge = token.is_valid ? '<span class="badge bg-success">✓ Válido</span>' : '<span class="badge bg-danger">✗ Inválido</span>';
+        const expiredBadge = isExpired ? '<span class="badge bg-warning">⏰ Expirado</span>' : '<span class="badge bg-info">✓ Activo</span>';
+        
+        const tokenCard = document.createElement('div');
+        tokenCard.className = 'card mb-3';
+        tokenCard.innerHTML = `
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <strong>
+              <i class="fas fa-key"></i> Token #${tokens.length - index} - ${typeLabel}
+              ${validBadge}
+              ${token.expires_at ? expiredBadge : ''}
+            </strong>
+            <span class="text-muted">${createdAt}</span>
+          </div>
+          <div class="card-body">
+            <div class="row mb-2">
+              <div class="col-md-6">
+                <small class="text-muted">Algoritmo:</small>
+                <strong>${token.algorithm || 'N/A'}</strong>
+              </div>
+              <div class="col-md-6">
+                <small class="text-muted">Expira:</small>
+                <strong>${expiresAt}</strong>
+              </div>
+            </div>
+            
+            <div class="mb-2">
+              <small class="text-muted">Token JWT:</small>
+              <div class="p-2 bg-light rounded" style="font-family: monospace; font-size: 0.85em; word-break: break-all; max-height: 80px; overflow-y: auto;">
+                ${token.token}
+              </div>
+            </div>
+            
+            <div class="mb-2">
+              <small class="text-muted">Header:</small>
+              <pre class="p-2 bg-light rounded" style="font-size: 0.8em; margin-bottom: 0;">${JSON.stringify(token.header, null, 2)}</pre>
+            </div>
+            
+            <div class="mb-3">
+              <small class="text-muted">Payload:</small>
+              <pre class="p-2 bg-light rounded" style="font-size: 0.8em; margin-bottom: 0;">${JSON.stringify(token.payload, null, 2)}</pre>
+            </div>
+            
+            <div class="d-flex gap-2">
+              <button class="btn btn-sm btn-primary" onclick="copyToClipboard('${token.token.replace(/'/g, "\\'")}')">
+                <i class="fas fa-copy"></i> Copiar Token
+              </button>
+              <button class="btn btn-sm btn-success" onclick="loadTokenToAnalyzer('${token.token.replace(/'/g, "\\'")}')">
+                <i class="fas fa-search"></i> Analizar de Nuevo
+              </button>
+              <button class="btn btn-sm btn-danger" onclick="deleteToken('${token._id}')">
+                <i class="fas fa-trash"></i> Eliminar
+              </button>
+            </div>
+          </div>
+        `;
+        
+        container.appendChild(tokenCard);
+      });
+    } catch (error) {
+      console.error('Error cargando tokens:', error);
+      container.innerHTML = '<div class="alert alert-danger"><i class="fas fa-exclamation-circle"></i> Error al cargar los tokens guardados</div>';
+    }
+  }
+
+  // Cargar token en el analizador
+  function loadTokenToAnalyzer(token) {
+    const analyzeTab = new bootstrap.Tab(document.getElementById('analyze-tab'));
+    analyzeTab.show();
+    document.querySelector('textarea[name="jwt"]').value = token;
+    window.scrollTo(0, 0);
+  }
+
+  // Eliminar token
+  async function deleteToken(tokenId) {
+    if (!confirm('¿Estás seguro de eliminar este token?')) {
+      return;
+    }
+    
+    try {
+      const response = await fetch(`/api/tokens/${tokenId}`, {
+        method: 'DELETE'
+      });
+      
+      if (response.ok) {
+        alert('Token eliminado correctamente');
+        loadSavedTokens();
+      } else {
+        alert('Error al eliminar el token');
+      }
+    } catch (error) {
+      console.error('Error eliminando token:', error);
+      alert('Error al eliminar el token');
     }
   }
 
