@@ -117,7 +117,11 @@ class TokenRepository:
         if collection is None:
             return None
         
-        token_data["created_at"] = datetime.utcnow()
+        # Si no tiene created_at, agregarlo como timestamp Unix
+        if "created_at" not in token_data:
+            import time
+            token_data["created_at"] = int(time.time())
+        
         result = collection.insert_one(token_data)
         return str(result.inserted_id)
     

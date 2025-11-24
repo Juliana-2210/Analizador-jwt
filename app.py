@@ -234,14 +234,17 @@ def index():
                         "expires_at": payload_obj["exp"],
                         "notes": f"Token creado con algoritmo {algorithm} y expiración en {exp_seconds}s"
                     }
+                    print(f"[DEBUG CREATE] Guardando token creado: {new_token[:50]}...")
                     token_id = TokenRepository.save_token(token_data)
+                    print(f"[DEBUG CREATE] Token guardado con ID: {token_id}")
                     output["create_result"] = {
                         "ok": True, 
                         "token": new_token,
                         "token_id": str(token_id) if token_id else None,
                         "algorithm": algorithm,
                         "expires_at": payload_obj["exp"],
-                        "expiration_seconds": exp_seconds
+                        "expiration_seconds": exp_seconds,
+                        "saved_to_db": token_id is not None
                     }
                 else:
                     output["create_result"] = {
