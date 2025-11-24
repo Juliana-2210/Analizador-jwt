@@ -618,17 +618,6 @@ DOT → "."
                 }
                 updateTimer();
                 const timerInterval = setInterval(updateTimer, 1000);
-                
-                // Mostrar botón para ver en Tokens Generados
-                {% if output.create_result.token_id %}
-                setTimeout(() => {
-                  if (confirm('✅ Token guardado en la base de datos.\n\n¿Quieres ver todos tus tokens generados?')) {
-                    const savedTokensTab = new bootstrap.Tab(document.getElementById('saved-tokens-tab'));
-                    savedTokensTab.show();
-                    loadSavedTokens();
-                  }
-                }, 1000);
-                {% endif %}
               </script>
             {% endif %}
             
@@ -881,6 +870,9 @@ DOT → "."
       
       container.innerHTML = '';
       
+      // Ordenar tokens por created_at descendente (más reciente primero)
+      tokens.sort((a, b) => (b.created_at || 0) - (a.created_at || 0));
+      
       tokens.forEach((token, index) => {
         const createdAt = token.created_at ? new Date(token.created_at * 1000).toLocaleString('es-ES') : 'N/A';
         const expiresAt = token.expires_at ? new Date(token.expires_at * 1000).toLocaleString('es-ES') : 'N/A';
@@ -895,7 +887,7 @@ DOT → "."
         tokenCard.innerHTML = `
           <div class="card-header d-flex justify-content-between align-items-center">
             <strong>
-              <i class="fas fa-key"></i> Token #${tokens.length - index} - ${typeLabel}
+              <i class="fas fa-key"></i> Token #${index + 1} - ${typeLabel}
               ${validBadge}
               ${token.expires_at ? expiredBadge : ''}
             </strong>
@@ -962,24 +954,16 @@ DOT → "."
 
   // Eliminar token
   async function deleteToken(tokenId) {
-    if (!confirm('¿Estás seguro de eliminar este token?')) {
-      return;
-    }
-    
     try {
       const response = await fetch(`/api/tokens/${tokenId}`, {
         method: 'DELETE'
       });
       
       if (response.ok) {
-        alert('Token eliminado correctamente');
         loadSavedTokens();
-      } else {
-        alert('Error al eliminar el token');
       }
     } catch (error) {
       console.error('Error eliminando token:', error);
-      alert('Error al eliminar el token');
     }
   }
 
